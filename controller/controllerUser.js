@@ -13,7 +13,7 @@ const registerSchema =joi.object({
 exports.createUser = async (req, res) => {
    
     const email = req.body.email;
-    const user= await UserDetails.findOne({email: req.email})
+    const user= await UserDetails.findOne({email:email})
     if(user){
             return res.end('email already exist')
             }
@@ -70,7 +70,7 @@ if(!validpassword){
 }
 else{
     const useraccess=user.isadmin?true:false
-    const userkey= user.isadmin?process.env.SECRET_KEY:process.env.ADMIN_KEY
+    const userkey= await user.isadmin?process.env.SECRET_KEY:process.env.ADMIN_KEY
 
     const token = jwt.sign({email:req.body.email},userkey)
    return res.json({token:token,username:user.username,admin:useraccess})
@@ -79,5 +79,63 @@ else{
 }
 
 
+exports.showMovies = async (req, res) => {
+    
+  
+    MovieCollection.find()
+      .then(data => {
+        if (!data) {
+          res.status(404).send({
+            message: `no cinemahall exist!`
+          });
+        } else {
+            
+          res.status(200).send(data);
+          
+        }
+      })
+      .catch(err => {
+        res.status(500).send(err);
+      });
 
+
+   
+  };
+
+
+  exports.showCinemaHall = async (req, res) => {
+
+  CinemaHall.find()
+  .then(data => {
+    if (!data) {
+      res.status(404).send({
+        message: `no cinemahall exist!`
+      });
+    } else {
+        
+      res.status(200).send(data);
+      
+    }
+  })
+  .catch(err => {
+    res.status(500).send(err);
+  });
+}
+
+
+
+
+exports.ticketPayment = (req,res)=>{
+
+  const id = req.body.id;
+   const seatBooked = req.body.userSelected
+
+
+CinemaHall.findOneAndUpdate({"_id": id},   {$addToSet: {'screen.seatBooked':seatBooked }}, {returnDocument: "after"})
+.then((data)=>{
+  res.send(data.screen.seatBooked)
+})
+
+
+}
 

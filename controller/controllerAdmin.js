@@ -23,7 +23,7 @@ const movieSchema =joi.object({
 
 const cinemaHallSchema =joi.object({
     name: joi.string().max(16).required(),
-    screen: joi.array().items(joi.object({name:joi.string(),movie:joi.string()})).required(),
+    screen: joi.object({name:joi.string(),movie:joi.string(),seatBooked:joi.string(),seatHolded:joi.string()}).required(),
     address: joi.array().items(joi.object({city:joi.string(),place:joi.string()})) 
       
 
@@ -35,7 +35,7 @@ exports.verify=(req,res,next)=>{
 
     // console.log(JSON.stringify(req.headers['auth']));
 
-    const token = req.headers['auth']
+    const token = req.headers['token']
 
     if(!token){
        return res.end("Access Denied")
@@ -98,6 +98,7 @@ exports.addMovies= async (req,res)=>{
     
        else{
         console.log('data adding');
+        
         
         await moviecollection.save()
         .then(data => {

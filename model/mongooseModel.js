@@ -89,13 +89,20 @@ const Theatreschema = mongoose.Schema({
         type:String,
         required:true
     },
-    screen:[{name:{
+    screen:{name:{
         type:String,
       required:true},
       movie:{
         type:String,
-        default:null
-      }}],
+      required:true},
+      seatBooked:[
+       { type:String,
+        default:null}
+      ],
+      seatHolded:[
+        {type:String,
+        default:null}
+      ]},
       address:[{city:{
         type:String,
         required:true

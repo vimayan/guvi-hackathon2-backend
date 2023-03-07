@@ -1,4 +1,5 @@
  const route = require('express').Router();
+ const authenticator = require ("../controller/auth")
  const controllerUser = require('../controller/controllerUser')
  const controllerAdmin = require('../controller/controllerAdmin')
 
@@ -9,10 +10,14 @@ res.end('hello there')
 
 route.post('/register',controllerUser.createUser);
 route.post('/login',controllerUser.loginUser);
-// Router.post('/home/:username',controller.homepage)
 
 
-// Router.post("/home/admin")
+route.get('/home/showmovies/:username',authenticator.auth,controllerUser.showMovies)
+route.get('/home/showcinemahall/:username',authenticator.auth,controllerUser.showCinemaHall)
+
+
+route.post('/payment/:username',authenticator.auth,controllerUser.ticketPayment)
+
 
 route.post("/addmovie/admin",controllerAdmin.verify,controllerAdmin.addMovies);
 route.delete("/deletemovie/admin/:id",controllerAdmin.verify,controllerAdmin.deletemovie);
