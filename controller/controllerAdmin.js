@@ -15,7 +15,7 @@ const movieSchema =joi.object({
         genere:joi.string().max(16).required(),
         certified:joi.string().max(6).required(),
         length:joi.string().max(16).required(),
-        released_on: joi.date().format('YYYY-MM-DD').raw(),
+        released_on: joi.date().raw(),
 
 
 
@@ -23,7 +23,7 @@ const movieSchema =joi.object({
 
 const cinemaHallSchema =joi.object({
     name: joi.string().max(16).required(),
-    screen: joi.object({name:joi.string(),movie:joi.string(),seatBooked:joi.string(),seatHolded:joi.string()}).required(),
+    screen: joi.object({name:joi.string(),movie:joi.string(),seatBooked:joi.array(),seatHolded:joi.array()}).required(),
     address: joi.array().items(joi.object({city:joi.string(),place:joi.string()})) 
       
 
@@ -37,17 +37,22 @@ exports.verify=(req,res,next)=>{
 
     const token = req.headers['token']
 
+
     if(!token){
        return res.end("Access Denied")
     }
     try {
-        jwt.verify(token, process.env.ADMIN_KEY, (err) => {
+        jwt.verify(token,process.env.ADMIN_KEY, (err) => {
+
             if (err) {
-              return res.status(401).send({
-                message: "Unauthorized!"
-              });
+              return res.status(401).send(
+               err
+              );
             }
-            else {console.log('verified'); next()
+            else
+             {
+
+              next()
             return;
             
                 }
@@ -65,7 +70,7 @@ exports.verify=(req,res,next)=>{
 }
 
 exports.addMovies= async (req,res)=>{
-    console.log("trying");
+    console.log(req.data);
 
     const moviecollection = new MovieCollection({
         name: req.body.name,
@@ -89,7 +94,7 @@ exports.addMovies= async (req,res)=>{
       
         // Save Tutorial in the database
        if(error){
-        console.log('error')
+       
               return res.status(400).send(error);
               
     
@@ -102,7 +107,14 @@ exports.addMovies= async (req,res)=>{
         
         await moviecollection.save()
         .then(data => {
-          res.send(data);
+
+          MovieCollection.find().then((newdata)=>{
+
+            res.status(200).send(newdata)
+
+          })
+
+
         }).catch(err=>{
             res.status(401).send(err)
         })
@@ -143,7 +155,7 @@ exports.showmovies = (req, res) => {
   };
 
 
-exports.deletemovie = (req, res) => {
+exports.deleteMovie = (req, res) => {
     const id = req.params.id;
   
     MovieCollection.findByIdAndRemove(id)
@@ -153,9 +165,12 @@ exports.deletemovie = (req, res) => {
             message: `Cannot delete MovieCollection with id=${id}. Maybe MovieCollection was not found!`
           });
         } else {
-           const data =  MovieCollection.find()
+            MovieCollection.find().then(newdata=>{
+              console.log(newdata);
+              res.status(200).send(newdata);
+            })
             
-          res.status(200).send(data);
+          
 
         }
       })
@@ -168,8 +183,32 @@ exports.deletemovie = (req, res) => {
 
 
 
+  exports.updateMovies = (req, res) => {
+
+    MovieCollection.findOneAndUpdate({"_id":req.body._id}, {$set:{"name":req.body.name,"cast":req.body.cast,"crew":req.body.crew,"rating":req.body.rating,"genere":req.body.genere,
+    "certified":req.body.certified,"length":req.body.length,"released_on":req.body.released_on}}, {returnDocument: "after"})
+      .then(() => {
+        MovieCollection.find().then((data)=>{
+          res.send(data);
+        })
+       
+
+      })
+      .catch(err => {
+        res.status(500).send(err);
+      });
+  };
+
+
+
+
+
+
+
+
+
 exports.addCinemaHall= async (req,res)=>{
-    console.log("trying");
+  
 
     const CinemaHallcollection = new CinemaHall({
         name: req.body.name,
@@ -185,8 +224,8 @@ exports.addCinemaHall= async (req,res)=>{
 
         
         const {error} = await cinemaHallSchema.validateAsync(req.body)
-      
-        // Save Tutorial in the database
+     
+        
        if(error){
         console.log('error')
               return res.status(400).send(error);
@@ -196,11 +235,15 @@ exports.addCinemaHall= async (req,res)=>{
     
     
        else{
-        console.log('data adding');
+      
         
         await CinemaHallcollection.save()
-        .then(data => {
-          res.send(data);
+        .then(() => {
+          CinemaHall.find().then((data)=>{
+            res.send(data);
+          })
+         
+
         }).catch(err=>{
             res.status(401).send(err)
         })
@@ -221,8 +264,7 @@ exports.addCinemaHall= async (req,res)=>{
 
 exports.deleteCinemahall = async (req, res) => {
     const id = req.params.id;
-    console.log(id);
-  
+
     await CinemaHall.findByIdAndRemove(id)
       .then(data => {
         if (!data) {
@@ -230,7 +272,9 @@ exports.deleteCinemahall = async (req, res) => {
               message: `Cannot delete CinemaHall with id=${id}. Maybe CinemaHall was not found!`
             });
           } else {
-            res.send(data);
+            CinemaHall.find().then((newdata)=>{
+              res.send(newdata);
+            })
           }
       })
       .catch(err => {
@@ -241,6 +285,8 @@ exports.deleteCinemahall = async (req, res) => {
 
   exports.showCinemahall = (req, res) => {
     
+
+  
   
     CinemaHall.find()
       .then(data => {
@@ -259,4 +305,84 @@ exports.deleteCinemahall = async (req, res) => {
       });
   };
 
+  exports.updateCinemahall = (req, res) => {
+    console.log(req.body._id);
+    CinemaHall.findOneAndUpdate({"_id":req.body._id}, {$set:{"name":req.body.name,"screen":req.body.screen,"address":req.body.address}}, {returnDocument: "after"})
+      .then(() => {
+        CinemaHall.find().then((data)=>{
+          res.send(data);
+        })
+       
 
+      })
+      .catch(err => {
+        res.status(500).send(err);
+      });
+  };
+
+
+
+
+
+
+  
+
+exports.showUser = (req, res) => {
+    
+  
+  UserDetails.find()
+    .then(data => {
+      if (!data) {
+        res.status(404).send({
+          message: `no user exist!`
+        });
+      } else {
+          
+        res.status(200).send(data);
+        
+      }
+    })
+    .catch(err => {
+      res.status(500).send(err);
+    });
+};
+
+
+
+
+exports.deleteUser = async (req, res) => {
+  const id = req.params.id;
+
+  await UserDetails.findByIdAndRemove(id)
+    .then(data => {
+      if (!data) {
+          res.status(404).send({
+            message: `Cannot delete user with id=${id}. Maybe user was not found!`
+          });
+        } else {
+          UserDetails.find().then((newdata)=>{
+            res.send(newdata);
+          })
+        }
+    })
+    .catch(err => {
+      res.status(500).send(err);
+    });
+};
+
+
+
+exports.updateUser = (req, res) => {
+  
+  UserDetails.findOneAndUpdate({"_id":req.body._id}, {$set:{"username":req.body.username,"email":req.body.email,"age":req.body.age}}, {returnDocument: "after"})
+    .then(() => {
+      UserDetails.find().then((data)=>{
+        res.send(data);
+      })
+     
+
+    })
+    .catch(err => {
+      res.status(500).send(err);
+    });
+};

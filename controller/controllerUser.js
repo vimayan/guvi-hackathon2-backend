@@ -56,24 +56,34 @@ const loginSchema =joi.object({
     password: joi.string().regex(/^[a-zA-Z0-9]{6,16}$/).min(8).required()
 }).with('username','password')
 
+
+
+
+
 exports.loginUser=async (req,res)=>{
 
 const email = req.body.email
 
     const user= await UserDetails.findOne({email: email})
+   
     if(!user){
         return res.end('email id not exist please register');
      }
     const validpassword = await bcrypt.compare(req.body.password,user.password)
-if(!validpassword){
+    
+
+   if(!validpassword){
    return res.end('please enter valid password')
 }
 else{
-    const useraccess=user.isadmin?true:false
-    const userkey= await user.isadmin?process.env.SECRET_KEY:process.env.ADMIN_KEY
+  
 
-    const token = jwt.sign({email:req.body.email},userkey)
-   return res.json({token:token,username:user.username,admin:useraccess})
+    const userkey= await user.isadmin?process.env.ADMIN_KEY:process.env.SECRET_KEY
+    
+
+    const token = jwt.sign({email:req.body.email},userkey);
+
+   return res.json({token:token,username:user.username,admin:user.isadmin})
 }
 
 }
